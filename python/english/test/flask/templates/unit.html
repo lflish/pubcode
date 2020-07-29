@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>小宇背单词</title>
+<style>
+    /*通用*/
+    body,html{font-size:13px;color: #555;}
+    body,html,p,dev,span,ul,li,dl,dt,dd,input{margin:0;padding:0;}
+    a{text-decoration: none}
+    li{list-style: none;}
+    .clearfix:after{
+        display: block;
+        content:"\200B";
+        clear: both;
+        height: 0;
+    }
+    .clearfix{
+        *zoom:1;
+    }
+    /*本页面适用*/
+    .menu{
+        width: 160px;
+        position: fixed;
+        top:0;
+        left:0;
+        bottom:0;
+        background: #f1f1f1;
+    }
+    .menu .de_icon{
+        font-size: 30px;
+        text-align: center;
+        padding: 30px 0;
+        background: #34b4c3;
+        color: #fff;
+    }
+    .menu .de_icon a{
+        display: block;
+        color:#fff;
+    }
+    .menu ul{
+        padding:20px 0 20px;
+    }
+    .menu ul li{
+        text-align: center;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .menu ul li a{
+        display: block;
+        color: #555;
+        text-decoration: none;
+        padding: 10px 0;
+    }
+    .menu ul li:hover,.menu ul li.cur a{
+        background: #f8f8fa;
+        color: #6fc2ca;
+    }
+    .main{
+        margin-left:160px;
+        background: #fefeff;
+        padding:30px;
+    }
+    .content .unit{
+        line-height: 20px;
+        padding-top: 10px;
+    }
+    .content .unit .box,.content .unit .record,.content .unit .en,.content .unit .translate{
+        float: left;
+    }
+    .content .unit .box{
+        border:1px solid #ececec;
+        width: 14px;
+        height: 14px;
+        background: #fff;
+        position: relative;
+        top:3px;
+    }
+    .content .unit .record{
+        color: #1a9144;
+        padding: 0 15px 0 10px;
+    }
+    .content .unit .translate{
+        background: #f2f4f6;
+        color: #31a7b6;
+        padding: 0px 7px;
+        margin: 0 10px 0 15px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    .content .unit .en{
+        font-size: 14px;
+        font-weight: bold;
+    }
+    .content .unit .cn{
+        padding:10px 0 10px 24px;
+        border-top:1px solid #ccc;
+        margin-top:10px;
+        letter-spacing: 1px;
+        display: none;
+    }
+    .content .unit:hover .cn{
+        background:#f3f5f2;
+    }
+    .content .show .cn{
+        display: block;
+    }
+</style>
+
+</head>
+<body>
+
+<div>
+    <!--左侧菜单-->
+    <div class="menu">
+        <p class="de_icon"><a href="/index">首页</a></p>
+        <ul>
+            {% for i in urls.keys() %}
+            <li><a href={{ urls[i] }}>第 {{ i + 1 }} 章</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- 右侧宽度自适应（占据剩余宽度）主体内容 -->
+    <div class="main content">
+        {% for key in word.keys() %}
+        <div class="unit">
+            <p class="clearfix">
+                <input class="box" name="save" id="save" type="checkbox" onClick="save_ck(this);" checked>
+                <span class="record">记住</span>
+                <span class="en">{{ key }}</span>
+                <span class="translate" onclick="removeElement({{ loop.index }})">翻译</span>
+            </p>
+            <p class="cn" id={{ loop.index }}{{ count }}>{{ word[key] }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script>
+$(function(){
+    //效果一  点击翻译，显示当前中文翻译，并且关闭其他英文的中文翻译（整个页面有且只有一个中文翻译）
+    $(".content .unit").each(function(i){
+      $(".content .unit").eq(i).children('.clearfix').on("click",function(e){
+        if($(e.target).hasClass('translate')){
+          $(this).parent().toggleClass('show');
+          $(this).parent().siblings().removeClass('show');
+        }
+      });
+    });
+
+    //效果二  点击翻译，显示当前中文翻译，不会关闭其他中文翻译，可同时显示多个翻译
+    /*$(".content .unit").each(function(i){
+        $(".content .unit").eq(i).children('.clearfix').on("click",function(e){
+            if($(e.target).hasClass('translate')){
+                $(this).parent().toggleClass('show');
+            }
+        });
+    });*/
+})
+</script>
+
+</body>

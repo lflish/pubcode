@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <script type="text/javascript">
+
+        var mycars = new Array();
+
+        for(i = 0; i <= 5; i++){
+            mycars[i] = 0;
+        }
+
+        function removeElement(id)
+        {
+            mycars[id]++;
+            console.log('mycars[%s]=%d', id, mycars[id]);
+
+            if(mycars[id] % 2 == 0)
+                document.getElementById(id).style.display="none";
+            else
+                document.getElementById(id).style.display="inline";
+        }
+    </script>
+
+</head>
+
+<body>
+
+<button name="button1" type="button" onclick="removeElement(0)">button 1</button> <span id=0>This is a paragraph.</span>
+
+<button name="button1" type="button" onclick="removeElement(1)">button 1</button> <span id=1>This is a paragraph.</span>
+
+<button name="button1" type="submit" onclick="removeElement(2)">button 1</button> <span id=2>This is a paragraph.</span>
+
+
+</body>
+</html>
+
+<!--
+<html>
+<head>
+<script type="text/javascript">
+function removeElement()
+{
+document.getElementById("p1").style.display="none";
+}
+</script>
+</head>
+<body>
+
+<h1>This is a header</h1>
+
+<p id="p1">This is some text. This is some text. This is some text.
+This is some text. This is some text. This is some text.
+This is some text. This is some text. This is some text.</p>
+
+<input type="button" onclick="removeElement()" value="Do not display paragraph" />
+
+</body>
+</html>
+-->
