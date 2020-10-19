@@ -3,66 +3,114 @@
  * @brief 日志系统
  * @author    yu
  * @date     2018-5-7
- * @version  A001 
+ * @version  A002
  * @copyright yu
  * @par History: 
+ * 		2020-10-15 添加运行日志大小限制	
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "runlog.h"
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-static char run_log_file[] = "/tmp/sda_run_log.tmp";
+
+#include "runlog.h"
+#include "wmtime.h"
+
 static FILE *runlog_fp = NULL;
+static int runlog_fd = -1;
+
+static unsigned int run_flag;
+static unsigned int maxsize;
+
+#define TYPE_1 0x01
+#define TYPE_2 0x02
+#define TYPE_3 0x04
+#define TYPE_4 0x08
+
+#define RUN_MSIZE 0x10
+#define RUN_MSIZE2 0x20
+#define RUN_MSIZE3 0x40
+#define RUN_MSIZE4 0x80
+
+#define RUN_OFILE 0x100
+#define RUN_OSOCK 0x200
+#define RUN_OUNIX 0x400
 
 /** 
- * xm_log_open,打开消息队列
+ * runlog_open,打开消息队列
  * @retval  OK      0
  * @retval  ERROR   -1
  * @par 修改日志
  *      yu于2018-05-07创建
  */
-int runlog_open()
+void runlog_open(const char *path, int flag, int size)
 {
-	runlog_fp = fopen(run_log_file, "a+");
+	if(path == NULL)
+		return ;
+
+	runlog_fp = fopen(path, "a+");
 
 	if(runlog_fp == NULL)
-		return -1;
-	
-	setbuf(runlog_fp, NULL);
-	return 0;
+		fprintf(stderr, "Open Runlog Path[%s] error No:%d\n", path, errno);
+	else{
+		setbuf(runlog_fp, NULL);
+		runlog_fd = fileno(runlog_fp);
+	}
+
+	run_flag = flag;
+	maxsize = size;
+
+	return ;
 }
 
-/** 
- * debuginfo,程序运行写日志函数
- * @param[in]   logtype 	日志类型
- * @param[in]   file 		文件
- * @param[in]   fun 		函数名
- * @param[in]   line 		行号
- * @param[in]   format 		可变参数列表
- * @retval  OK      0
- * @par 修改日志
- *      yu于2018-05-07创建
- */
-int debuginfo(const char * type, char *file, int line, const char * fun,  char *format, ...)
+void outfile(FILE *fd, const char *msg)
 {
-	if(runlog_fp == NULL)
-		return 0;
+	int ret = 0;
+	struct stat buf = {0};
+
+	if(RUN_MSIZE & run_flag){
+		ret = fstat(runlog_fd, &buf);
+		if((ret != -1) && (buf.st_size > (maxsize - 4096)))
+			ret = ftruncate(runlog_fd, 0);
+	}
+
+	if(ret != -1 && fd != NULL)
+		ret = fprintf(fd, "%s", msg);
+
+	return ;	
+}
+
+void runlog(const char *mod, const char *type, char *file, int line, const char *fun,  char *format, ...)
+{
+	if(runlog_fp == NULL || format == NULL)
+		return ;
 
 	char buf[MSG_DATA_LEN] = {0};
+	char msg[MSG_DATA_LEN] = {0};
+	char time[32];
 
 	va_list argptr;
 
 	va_start(argptr, format);
-	vsnprintf(buf, MSG_DATA_LEN, format, argptr);
+	vsnprintf(buf, MSG_DATA_LEN - 512, format, argptr);
 	va_end(argptr);
 
-	//fprintf(runlog_fp, "<%s><FL:%s:%d,FUNC:%s>:%s\n", type, file, line, fun, buf);
-	fprintf(runlog_fp, "<%s><%s:%d,%s>:%s\n", type, file, line, fun, buf);
+	if(run_flag & TYPE_1)
+		snprintf(msg, sizeof(msg), "[%s] <%s> %s %s %s:%d %s\n", wm_localtime(time, sizeof(time)), mod, type, fun, file, line, buf);
+	else if(run_flag & TYPE_2)
+		snprintf(msg, sizeof(msg), "[%s] <%s> %s %s:%d %s\n", wm_localtime(time, sizeof(time)), mod, type, fun, line, buf);
+	else if(run_flag & TYPE_3)
+		snprintf(msg, sizeof(msg), "<%s> %s %s\n", mod, type, buf);
 
-	return 0;	
+	if(run_flag & RUN_OFILE)
+		outfile(runlog_fp, msg);
+
+	return ;	
 }
 
 /** 
@@ -72,7 +120,6 @@ int debuginfo(const char * type, char *file, int line, const char * fun,  char *
  */
 void runlog_close()
 {
-
 	if(runlog_fp)
 		fclose(runlog_fp);
 
@@ -82,14 +129,14 @@ void runlog_close()
 #ifdef DEBUG
 int main(int argc, char **argv)
 {
-	int i = 1000000;
+	int i = 10000000;
 	int pid = 0;
 
-	runlog_open();
+	runlog_open("./test", TYPE_2 | RUN_OFILE | RUN_MSIZE, 1024 * 1024 * 20);
 
 	pid = fork();
 	while(i--)
-		runlog_write(1, __FILE__, __FUNCTION__, __LINE__, "-%d:i=%d", pid, i);
+		runlog("Keeplive", LOG_ERROR, "pid:%d", getpid());
 
 	runlog_close();
 	return 0;
