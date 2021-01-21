@@ -48,8 +48,11 @@ fn test_ptr()
 }
 */
 
+<<<<<<< HEAD
 /* 元组 */
 
+=======
+>>>>>>> 6c2543a3c2c57b8f6b898f86c600e24e28f674a5
 fn main()
 {
     test_int();

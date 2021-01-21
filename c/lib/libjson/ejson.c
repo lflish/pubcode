@@ -16,7 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "cjson.h"
+#include "ejson.h"
 
  /**  添加数组元素**/
 void add_arr_2_obj(cjson* obj, const char *name, cjson *arr) 
