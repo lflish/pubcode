@@ -1,4 +1,4 @@
-package main
+package ch2
 
 import "fmt"
 
@@ -17,17 +17,16 @@ const VarConst = 2
 	type 或者expression 可以省略一个
 */
 
-func TestVar(){
-	var i, j, k int // int int int
-	var b ,f, s = true, 2.3, "four" // bool, float64 string
+func TestVar() {
+	var i, j, k int                 // int int int
+	var b, f, s = true, 2.3, "four" // bool, float64 string
 
 	fmt.Println(i, j, k, b, f, s)
 }
 
-
 /* 短声明
-*/
-func TestLiteVar(){
+ */
+func TestLiteVar() {
 	i, j, k := 1, 2, 3
 
 	/* 短声明，左值必须至少有一个新变量 */
@@ -36,7 +35,6 @@ func TestLiteVar(){
 	fmt.Println(i, j, k)
 }
 
-
-func main(){
+func main() {
 	TestVar()
 }
