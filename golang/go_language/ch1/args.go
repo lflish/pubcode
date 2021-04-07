@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func show_args(){
+func show_args() {
 	fmt.Println("arg[1:]:", os.Args[1:])
 	fmt.Println("arg:", os.Args[:])
 }
@@ -17,5 +17,3 @@ func show_args(){
 func main() {
 	show_args()
 }
-
-
