@@ -15,5 +15,8 @@ func test() {
 
 func main() {
 	//test()
-	ch3.Test1()
+	//ch3.Test1()
+	//ch3.Ch3StrTest1()
+	//ch3.Ch3StrTest2()
+	ch3.Ch3StrTest3()
 }
