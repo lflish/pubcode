@@ -57,7 +57,9 @@ esqlite *esqlite_open(const char *dbfile, int flag, void *value)
 
 	if(SQLITE_OK == sqlite3_open_v2(dbfile, &edb->conn, flag, NULL)){
 		sqlite3_busy_handler(edb->conn, esqlite_busy_handle_callback, (void *)edb->conn);
-    if(passwd) sqlite3_key(edb->conn, passwd, strlen(value));
+    /* support passwd key*/
+    if(passwd && passwd[0]) 
+            sqlite3_key(edb->conn, passwd, strlen(passwd));
 		return edb;
 	}
 

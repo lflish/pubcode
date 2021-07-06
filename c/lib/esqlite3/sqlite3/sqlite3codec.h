@@ -53,8 +53,16 @@ extern "C" {
 #include "sqlite3.h"
  
 #define SQLITE_MAX_PAGE_SIZE 65536
+
+#ifndef BTREE
+#define BTREE
 typedef struct Btree Btree;
+#endif
+
+#ifndef PAGER
+#define PAGER
 typedef struct Pager Pager;
+#endif
 
 
 typedef struct _Codec
