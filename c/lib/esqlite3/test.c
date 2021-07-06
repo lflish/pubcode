@@ -40,7 +40,7 @@ int decallback(void *NotUsed, int argc, char **argv, char **azColName)
 	}
 
 	printf("\n");
-	test_exec();
+	//test_exec();
 
 	return 0;
 }

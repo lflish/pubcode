@@ -1,9 +1,10 @@
 /** 
 * @file sqlite3ex.c
 * @date 2020-10-28 05:58:29
-* @details 封装sqlite3接口，老版本ssd-db.c暂时保留
+* @details 封装sqlite3接口
 * @author lflish
 * @par create
+* @par 2021-07-06 添加密码认证功能
 **/
 
 #include <stdlib.h>
@@ -11,6 +12,29 @@
 #include <unistd.h>
 #include "esqlite.h"
 
+static char err_esql[256];
+static char err_emsg[256];
+
+char *esqlite_errsql()
+{
+	return err_esql;
+}
+
+char *esqlite_errmsg()
+{
+	return err_emsg;
+}
+
+static void store_err(const char *sql, const char *msg)
+{
+	if(sql)
+		snprintf(err_esql, sizeof(err_esql), "esql:%s", sql);
+
+	if(msg)
+		snprintf(err_emsg, sizeof(err_emsg), "emsg:%s", msg);
+
+	return ;
+}
 
 int esqlite_busy_handle_callback(void *ptr,int count)
 {
@@ -27,9 +51,15 @@ esqlite *esqlite_open(const char *dbfile, int flag, void *value)
 	if(edb == NULL)
 		return NULL;
 
-	if(SQLITE_OK == sqlite3_open_v2(dbfile, &edb->conn, flag, NULL))
+  char *passwd = (char *)value;
+
+	memset(edb, 0, sizeof(esqlite));
+
+	if(SQLITE_OK == sqlite3_open_v2(dbfile, &edb->conn, flag, NULL)){
 		sqlite3_busy_handler(edb->conn, esqlite_busy_handle_callback, (void *)edb->conn);
+    if(passwd) sqlite3_key(edb->conn, passwd, strlen(value));
 		return edb;
+	}
 
 	EFREE(edb);
 	return NULL;
@@ -61,9 +91,14 @@ int esqlite_exec(esqlite *db, const char *sql, void *vlaue)
 	int ret = 0;
 	char *err_msg;
 
+	if(db == NULL || sql == NULL){
+		snprintf(err_emsg, sizeof(err_emsg), "sql or db is NULL\n");
+		return ESQLITE_ERR;
+	}
+
 	ret = sqlite3_exec(db->conn, sql, NULL, NULL, &err_msg);
 	if(ret != SQLITE_OK){
-		fprintf(stderr, "Exec::%s|%s\n", sql, err_msg);
+		store_err(sql, err_msg);
 		sqlite3_free(err_msg);
 		return ESQLITE_ERR;
 	}
@@ -78,7 +113,7 @@ int esqlite_exec_cbk(esqlite *db, const char *sql, int (*callback)(void*,int,cha
 
 	ret = sqlite3_exec(db->conn, sql, callback, args, &err_msg);
 	if(ret != SQLITE_OK){
-		fprintf(stderr, "Exec::%s|%s\n", sql, err_msg);
+		store_err(sql, err_msg);
 		sqlite3_free(err_msg);
 		return ESQLITE_ERR;
 	}
@@ -96,10 +131,10 @@ int esqlite_prepare(esqlite *db, sqlite3_stmt **stmt, const char *sql, esql_args
 	if(db->conn == NULL || sql == NULL)
 		return ESQLITE_ERR;
 
-	if(SQLITE_OK != sqlite3_prepare_v2(db->conn, sql, strlen(sql), stmt, NULL))
+	if(SQLITE_OK != sqlite3_prepare_v2(db->conn, sql, strlen(sql), stmt, NULL)){
+		store_err(sql, sqlite3_errmsg(db->conn));
 		return ESQLITE_ERR;
-
-	sqlite3_busy_handler(db->conn, db->sqlite_busy_handle, NULL);
+	}
 
 	for(i = 1; node != NULL; node = node->next, i++){
 		switch(node->type){
@@ -113,13 +148,21 @@ int esqlite_prepare(esqlite *db, sqlite3_stmt **stmt, const char *sql, esql_args
 				sqlite3_bind_int64(*stmt, i, *(long *)node->value);
 				break;
 			case TEXT:{
-				if(node->encry == ESQLTE_ENCRYPT_NO){
+				if(node->encry == ESQLTE_ENCRYPT_NO || ((char *)node->value)[0] == '\0'){
 					sqlite3_bind_text(*stmt, i, node->value, -1, SQLITE_STATIC);
 					break;
 				}
-				value = ((char *(*)(char *))db->encrypt_handle)(node->value);
-				if(value == NULL)
+
+				if(db->encrypt_handle == NULL){
+					store_err(sql, "Encrypt Handle is null");
 					goto err;
+				}
+
+				value = ((char *(*)(char *))db->encrypt_handle)(node->value);
+				if(value == NULL){
+					store_err(sql, "Encrypt Handle error");
+					goto err;
+				}
 
 				sqlite3_bind_text(*stmt, i, value, -1, SQLITE_TRANSIENT);
 				EFREE(value);	
@@ -129,6 +172,7 @@ int esqlite_prepare(esqlite *db, sqlite3_stmt **stmt, const char *sql, esql_args
 				//sqlite3_bind_value(stmt, i, (const sqlite3_value *)node->value);
 				break;
 			default:
+				strcpy(err_emsg, "Args type error");
 				goto err;
 		}
 	}
@@ -145,12 +189,15 @@ int esqlite_exec_v2(esqlite *db, const char *sql, esql_args *head)
 	int ret = 0;
 
 	ret = esqlite_prepare(db, &stmt, sql, head);
-	if(ret != ESQLITE_OK)
+	if(ret != ESQLITE_OK){
 		return ESQLITE_ERR;
-
+	}
 	ret = sqlite3_step(stmt);
-	if(ret != SQLITE_DONE)
+	if(ret != SQLITE_DONE){
+		store_err(sql, sqlite3_errmsg(db->conn));
 		ret = ESQLITE_ERR;
+	}else
+		ret = ESQLITE_OK;
 
 	sqlite3_finalize(stmt);
 
@@ -204,8 +251,10 @@ int esqlite_get_table_v2(esqlite *db, const char *sql, esql_args* head, const ch
 
 void esqlite_close(esqlite *db)
 {
-	sqlite3_close_v2(db->conn);
-	EFREE(db);
+	if(db){
+		sqlite3_close_v2(db->conn);
+		EFREE(db);
+	}
 }
 
 int esql_args_push(esql_args *head, const int type, const void *value, const int encry)

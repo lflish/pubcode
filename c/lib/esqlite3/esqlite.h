@@ -1,3 +1,5 @@
+#ifndef __ESQLITE__
+#define __ESQLITE__
 /**
  * @file  times.c
  * @brief 时间封装接口
@@ -7,7 +9,12 @@
  * @par History: 
  */
 #include <stdio.h>
-#include <sqlite3.h>
+#include "sqlite3/sqlite3.h"
+
+#define ESQLITE_DEF_OPTION SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_PRIVATECACHE
+
+#define ARGV_INT(i) (argv[i] ? strtoul( argv[i], NULL, 0 ): 0)
+#define ARGV(i) (argv[i] ? argv[i] : "")
 
 #define ESQLITE_ROW	1
 #define ESQLITE_OK	0
@@ -66,3 +73,17 @@ void esqlite_close(esqlite * db);
 
 void esql_args_clear(esql_args *head);
 int esql_args_push(esql_args *head, const int type, const void *value, const int encry);
+
+char *esqlite_errsql();
+char *esqlite_errmsg();
+
+/* esqlite extend api */
+typedef int (*esqlite_extend_set_t)(esql_args *head, void *args);
+typedef int (esqlite_extend_get_t)(void *NotUsed, int argc, char **argv, char **azColName);
+
+int esqlite_extend_exec(char *dbpath, const char *sql, void *args);
+int esqlite_extend_exec_v2(char *dbpath, const char *sql, esql_args *args);
+int esqlite_extend_cbk_set(char *dbpath, const char *sql, esqlite_extend_set_t handle, void *args);
+int esqlite_extend_cbk_get(char *dbpath, const char *sql, esqlite_extend_get_t handle, void *args);
+
+#endif
