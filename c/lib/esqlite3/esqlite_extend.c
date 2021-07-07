@@ -9,12 +9,11 @@
 #include <stdio.h>
 #include "esqlite.h"
 
-/* esqlite extend api */
-int esqlite_extend_exec(char *dbpath, const char *sql, void *args)
+int esqlite_extend_passwd_exec(const char *dbpath, const char *key, const char *sql, void *args)
 {
 	int ret = 0;
 
-    esqlite * edb = esqlite_open(dbpath, ESQLITE_DEF_OPTION, NULL);
+    esqlite * edb = esqlite_open(dbpath, ESQLITE_DEF_OPTION, key);
 	if(edb == NULL)
 		return -1;
 
@@ -25,11 +24,11 @@ int esqlite_extend_exec(char *dbpath, const char *sql, void *args)
     return ret;
 }
 
-int esqlite_extend_exec_v2(char *dbpath, const char *sql, esql_args *args)
+int esqlite_extend_passwd_exec_v2(char *dbpath, const char *key, const char *sql, esql_args *args)
 {
-    int ret = 0;
+	int ret = 0;
 
-    esqlite * edb = esqlite_open(dbpath, ESQLITE_DEF_OPTION, NULL);
+    esqlite * edb = esqlite_open(dbpath, ESQLITE_DEF_OPTION, key);
 	if(edb == NULL)
 		return -1;
 
@@ -38,6 +37,17 @@ int esqlite_extend_exec_v2(char *dbpath, const char *sql, esql_args *args)
     esqlite_close(edb);
     
     return ret;
+}
+
+/* esqlite extend api */
+int esqlite_extend_exec(char *dbpath, const char *sql, void *args)
+{
+	return esqlite_extend_passwd_exec(dbpath, NULL, sql, args);
+}
+
+int esqlite_extend_exec_v2(char *dbpath, const char *sql, esql_args *args)
+{
+	return esqlite_extend_passwd_exec_v2(dbpath, NULL, sql, args);
 }
 
 int esqlite_extend_cbk_set(char *dbpath, const char *sql, esqlite_extend_set_t handle, void *args)

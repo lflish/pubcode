@@ -44,6 +44,9 @@ int esqlite_busy_handle_callback(void *ptr,int count)
 
 esqlite *esqlite_open(const char *dbfile, int flag, void *value)
 {
+	int ret = SQLITE_OK;
+	char *passwd = (char *)value;
+
 	if(dbfile == NULL)
 		return NULL;
 
@@ -51,15 +54,21 @@ esqlite *esqlite_open(const char *dbfile, int flag, void *value)
 	if(edb == NULL)
 		return NULL;
 
-  char *passwd = (char *)value;
 
 	memset(edb, 0, sizeof(esqlite));
 
 	if(SQLITE_OK == sqlite3_open_v2(dbfile, &edb->conn, flag, NULL)){
 		sqlite3_busy_handler(edb->conn, esqlite_busy_handle_callback, (void *)edb->conn);
-    /* support passwd key*/
-    if(passwd && passwd[0]) 
-            sqlite3_key(edb->conn, passwd, strlen(passwd));
+
+		/* support passwd key*/
+		if(passwd && passwd[0])
+			ret = sqlite3_key(edb->conn, passwd, strlen(passwd));
+
+		if(ret != SQLITE_OK){
+			esqlite_close(edb);
+			return NULL;
+		}
+		
 		return edb;
 	}
 
