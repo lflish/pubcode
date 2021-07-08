@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include "esqlite.h"
 
-int esqlite_extend_passwd_exec(const char *dbpath, const char *key, const char *sql, void *args)
+int esqlite_extend_passwd_exec(const char *dbpath, char *key, const char *sql, void *args)
 {
 	int ret = 0;
 
@@ -24,7 +24,7 @@ int esqlite_extend_passwd_exec(const char *dbpath, const char *key, const char *
     return ret;
 }
 
-int esqlite_extend_passwd_exec_v2(char *dbpath, const char *key, const char *sql, esql_args *args)
+int esqlite_extend_passwd_exec_v2(const char *dbpath, char *key, const char *sql, esql_args *args)
 {
 	int ret = 0;
 
@@ -40,17 +40,45 @@ int esqlite_extend_passwd_exec_v2(char *dbpath, const char *key, const char *sql
 }
 
 /* esqlite extend api */
-int esqlite_extend_exec(char *dbpath, const char *sql, void *args)
+int esqlite_extend_exec(const char *dbpath, const char *sql, void *args)
 {
 	return esqlite_extend_passwd_exec(dbpath, NULL, sql, args);
 }
 
-int esqlite_extend_exec_v2(char *dbpath, const char *sql, esql_args *args)
+int esqlite_extend_exec_v2(const char *dbpath, const char *sql, esql_args *args)
 {
 	return esqlite_extend_passwd_exec_v2(dbpath, NULL, sql, args);
 }
 
-int esqlite_extend_cbk_set(char *dbpath, const char *sql, esqlite_extend_set_t handle, void *args)
+int esqlite_extend_cbk_set(const char *dbpath, const char *sql, esqlite_extend_set_t handle, void *args)
+{
+	return esqlite_extend_passwd_cbk_set(dbpath, NULL, sql, handle, args);
+}
+
+int esqlite_extend_cbk_get(const char *dbpath, const char *sql, esqlite_extend_get_t handle, void *args)
+{
+	return esqlite_extend_passwd_cbk_get(dbpath, NULL, sql, handle, args);
+}
+
+int esqlite_extend_passwd_cbk_get(const char *dbpath, const char *key, const char *sql, esqlite_extend_get_t handle, void *args)
+{
+	int ret = 0;
+
+	if(!dbpath || !sql || !handle)
+		return -1;
+
+    esqlite * edb = esqlite_open(dbpath, ESQLITE_DEF_OPTION, key);
+	if(edb == NULL)
+		return -1;
+
+    ret = esqlite_exec_cbk(edb, sql, handle, args);
+
+    esqlite_close(edb);
+    
+    return ret;
+}
+
+int esqlite_extend_passwd_cbk_set(const char *dbpath, const char *passwd, const char *sql, esqlite_extend_set_t handle, void *args)
 {
 	int ret = 0;
 
@@ -65,27 +93,9 @@ int esqlite_extend_cbk_set(char *dbpath, const char *sql, esqlite_extend_set_t h
 		return ret;
 	}
 
-	ret = esqlite_extend_exec_v2(dbpath, sql, &head);
+	ret = esqlite_extend_passwd_exec_v2(dbpath, passwd, sql, &head);
 
 	esql_args_clear(&head);
 
 	return ret;
-}
-
-int esqlite_extend_cbk_get(char *dbpath, const char *sql, esqlite_extend_get_t handle, void *args)
-{
-	int ret = 0;
-
-	if(!dbpath || !sql || !handle)
-		return -1;
-
-    esqlite * edb = esqlite_open(dbpath, ESQLITE_DEF_OPTION, NULL);
-	if(edb == NULL)
-		return -1;
-
-    ret = esqlite_exec_cbk(edb, sql, handle, args);
-
-    esqlite_close(edb);
-    
-    return ret;
 }

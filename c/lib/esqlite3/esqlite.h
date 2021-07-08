@@ -81,12 +81,14 @@ char *esqlite_errmsg();
 typedef int (*esqlite_extend_set_t)(esql_args *head, void *args);
 typedef int (esqlite_extend_get_t)(void *NotUsed, int argc, char **argv, char **azColName);
 
-int esqlite_extend_exec(char *dbpath, const char *sql, void *args);
-int esqlite_extend_exec_v2(char *dbpath, const char *sql, esql_args *args);
-int esqlite_extend_cbk_set(char *dbpath, const char *sql, esqlite_extend_set_t handle, void *args);
-int esqlite_extend_cbk_get(char *dbpath, const char *sql, esqlite_extend_get_t handle, void *args);
+int esqlite_extend_exec(const char *dbpath, const char *sql, void *args);
+int esqlite_extend_exec_v2(const char *dbpath, const char *sql, esql_args *args);
+int esqlite_extend_cbk_set(const char *dbpath, const char *sql, esqlite_extend_set_t handle, void *args);
+int esqlite_extend_cbk_get(const char *dbpath, const char *sql, esqlite_extend_get_t handle, void *args);
 
-int esqlite_extend_passwd_exec(char *dbpath, const char *key, const char *sql, void *args);
-int esqlite_extend_passwd_exec_v2(char *dbpath, const char *key, const char *sql, esql_args *args);
+int esqlite_extend_passwd_exec(const char *dbpath, char *key, const char *sql, void *args);
+int esqlite_extend_passwd_exec_v2(const char *dbpath, char *key, const char *sql, esql_args *args);
+int esqlite_extend_passwd_cbk_set(const char *dbpath, const char *key, const char *sql, esqlite_extend_set_t handle, void *args);
+int esqlite_extend_passwd_cbk_get(const char *dbpath, const char *key, const char *sql, esqlite_extend_get_t handle, void *args);
 
 #endif

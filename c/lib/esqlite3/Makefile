@@ -28,6 +28,9 @@ test:test.c libesqlite.so
 enc_test:enc_test.c libesqlite.so
 	gcc -g -DDEBUG enc_test.c -o test -L./ -lesqlite -Wl,-rpath=./
 
+tools_esqlite:tools_esqlite.c libesqlite.so
+	gcc -g -DDEBUG tools_esqlite.c -o tools_esqlite -L./ -lesqlite -Wl,-rpath=./
+
 $(SQLITE_OBJS):%.o:sqlite3/%.c
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
